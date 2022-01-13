@@ -131,7 +131,7 @@ public class BatchConfiguration {
         JdbcBatchItemWriter<Product> itemWriter = new JdbcBatchItemWriterBuilder<Product>()
                 .dataSource(dataSource)
                 .itemSqlParameterSourceProvider(new BeanPropertyItemSqlParameterSourceProvider<>())
-                .sql("DELETE FROM Product WHERE code = :code")
+                .sql("DELETE FROM product WHERE code = :code")
                 .build();
 
         itemWriter.afterPropertiesSet();
