@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 
 @Service
 @Slf4j
@@ -24,27 +25,30 @@ public class CrawlService {
         int pageSize = nikeCrawler.getPageSize();
         log.info("page size : {}", pageSize);
 
+        CountDownLatch countdownLatch = new CountDownLatch(pageSize);
         for (int page = 1; page <= pageSize; page++) {
-            Thread thread = makeThread(page);
+            Thread thread = makeThread(page , countdownLatch);
             thread.start();
         }
 
-        Thread.sleep(10000);
-        log.info("products size : {}", products.size());
+        countdownLatch.await();
         return products;
     }
 
-    private Thread makeThread(int page) {
-        Thread thread = new Thread(() -> {
+    private Thread makeThread(int page, CountDownLatch countdownLatch) {
+        return new Thread(() -> {
             Document html = null;
             try {
                 html = nikeCrawler.crawlDocument(page);
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            products.addAll(nikeCrawler.parseToProduct(html));
+            addProducts(nikeCrawler.parseToProduct(html));
+            countdownLatch.countDown();
         });
+    }
 
-        return thread;
+    private synchronized void addProducts(List<Product> products) {
+        this.products.addAll(products);
     }
 }

@@ -31,6 +31,7 @@ import org.springframework.web.client.RestTemplate;
 import javax.persistence.EntityManagerFactory;
 import javax.sql.DataSource;
 import java.nio.charset.Charset;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -101,7 +102,11 @@ public class BatchConfiguration {
                 .<Product, Product>chunk(CHUNK_SIZE)
                 .reader(storedItemReader())
                 .processor(storedItemProcessor())
-                .writer(deprecatedItemDeleteWriter())
+                .writer(items -> {
+                    for (Object item : items) {
+                        log.info("updateDatabaseStep: {}", item.toString());
+                    }
+                })
                 .build();
     }
 
@@ -156,13 +161,13 @@ public class BatchConfiguration {
         return itemWriter;
     }
 
-    private ItemWriter<? super Product> sendToSlackWriter() {
+    private ItemWriter<? super Product> savedNewReleasedItemWriter() {
         return new JpaItemWriterBuilder<Product>()
                 .entityManagerFactory(entityManagerFactory)
                 .build();
     }
 
-    private ItemWriter<? super Product> savedNewReleasedItemWriter() {
+    private ItemWriter<? super Product> sendToSlackWriter() {
         RestTemplate restTemplate = new RestTemplate();
         HttpHeaders headers = new HttpHeaders();
 
